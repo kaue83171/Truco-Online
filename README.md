@@ -49,3 +49,9 @@ git push -u origin main
 ```
 
 Substitua `URL_DO_SEU_REPOSITORIO` pelo endereço do repositório que você criou. Não envie `.env` ao GitHub.
+
+
+
+## Site parta jogar:
+
+https://truco-online-delta.vercel.app/
