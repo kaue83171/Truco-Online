@@ -1,18 +1,21 @@
-const CARD_RANKS = [
-  { name: "Ás de espadas", suits: "♠", detail: "Espadão" },
-  { name: "Ás de paus", suits: "♣", detail: "Bastião" },
-  { name: "7 de espadas", suits: "♠", detail: "Espadilha" },
-  { name: "7 de ouro", suits: "♦", detail: "Manilha" },
-  { name: "3", suits: "♠  ♣  ♦  ♥", detail: "Todos os naipes empatam" },
-  { name: "2", suits: "♠  ♣  ♦  ♥", detail: "Todos os naipes empatam" },
-  { name: "Ás de ouro e de copas", suits: "♦  ♥", detail: "Empatam entre si" },
-  { name: "Rei (12)", suits: "♠  ♣  ♦  ♥", detail: "Todos os naipes empatam" },
-  { name: "Cavalo (11)", suits: "♠  ♣  ♦  ♥", detail: "Todos os naipes empatam" },
-  { name: "Valete (10)", suits: "♠  ♣  ♦  ♥", detail: "Todos os naipes empatam" },
-  { name: "7 de paus e de copas", suits: "♣  ♥", detail: "Empatam entre si" },
-  { name: "6", suits: "♠  ♣  ♦  ♥", detail: "Todos os naipes empatam" },
-  { name: "5", suits: "♠  ♣  ♦  ♥", detail: "Todos os naipes empatam" },
-  { name: "4", suits: "♠  ♣  ♦  ♥", detail: "A menor carta" },
+type RankCard = { value: string; suit: string };
+
+const ALL_SUITS = ["espadas", "paus", "ouro", "calice"];
+const CARD_RANKS: { name: string; detail: string; cards: RankCard[] }[] = [
+  { name: "Ás de espadas", detail: "Espadão", cards: [{ value: "A", suit: "espadas" }] },
+  { name: "Ás de paus", detail: "Bastião", cards: [{ value: "A", suit: "paus" }] },
+  { name: "7 de espadas", detail: "Espadilha", cards: [{ value: "7", suit: "espadas" }] },
+  { name: "7 de ouro", detail: "Manilha", cards: [{ value: "7", suit: "ouro" }] },
+  { name: "3", detail: "Todos os naipes empatam", cards: ALL_SUITS.map((suit) => ({ value: "3", suit })) },
+  { name: "2", detail: "Todos os naipes empatam", cards: ALL_SUITS.map((suit) => ({ value: "2", suit })) },
+  { name: "Ás de ouro e de copas", detail: "Empatam entre si", cards: ["ouro", "calice"].map((suit) => ({ value: "A", suit })) },
+  { name: "Rei (12)", detail: "Todos os naipes empatam", cards: ALL_SUITS.map((suit) => ({ value: "12", suit })) },
+  { name: "Cavalo (11)", detail: "Todos os naipes empatam", cards: ALL_SUITS.map((suit) => ({ value: "11", suit })) },
+  { name: "Valete (10)", detail: "Todos os naipes empatam", cards: ALL_SUITS.map((suit) => ({ value: "10", suit })) },
+  { name: "7 de paus e de copas", detail: "Empatam entre si", cards: ["paus", "calice"].map((suit) => ({ value: "7", suit })) },
+  { name: "6", detail: "Todos os naipes empatam", cards: ALL_SUITS.map((suit) => ({ value: "6", suit })) },
+  { name: "5", detail: "Todos os naipes empatam", cards: ALL_SUITS.map((suit) => ({ value: "5", suit })) },
+  { name: "4", detail: "A menor carta", cards: ALL_SUITS.map((suit) => ({ value: "4", suit })) },
 ];
 
 export function CardHierarchy() {
@@ -29,29 +32,31 @@ export function CardHierarchy() {
       </div>
 
       <ol className="grid gap-2 sm:grid-cols-2">
-        {CARD_RANKS.map((card, index) => (
+        {CARD_RANKS.map((rank, index) => (
           <li
-            key={card.name}
-            className={`flex min-h-[4.25rem] items-center gap-3 rounded-xl border px-3 py-2.5 ${
+            key={rank.name}
+            className={`flex min-h-[5.5rem] items-center gap-3 rounded-xl border px-3 py-2.5 ${
               index < 4
                 ? "border-amber-100/20 bg-gradient-to-r from-amber-200/[0.11] to-white/[0.03]"
                 : "border-white/[0.08] bg-black/10"
             }`}
           >
-            <span
-              className={`grid h-8 w-8 shrink-0 place-items-center rounded-lg font-mono text-xs font-bold ${
-                index < 4 ? "bg-amber-200 text-[#2d1c12]" : "bg-white/10 text-white/65"
-              }`}
-            >
-              {String(index + 1).padStart(2, "0")}
-            </span>
             <div className="min-w-0 flex-1">
-              <p className="font-semibold text-white">{card.name}</p>
-              <p className="text-xs text-white/45">{card.detail}</p>
+              <p className="font-semibold text-white">{rank.name}</p>
+              <p className="text-xs text-white/45">{rank.detail}</p>
             </div>
-            <span className="shrink-0 font-display text-lg tracking-[0.08em] text-amber-100/80">
-              {card.suits}
-            </span>
+            <div className="flex shrink-0 items-center justify-end -space-x-3" aria-label={rank.name}>
+              {rank.cards.map((card) => (
+                <img
+                  key={`${card.value}-${card.suit}`}
+                  src={`/cards/${card.value}-${card.suit}.jpg`}
+                  alt={`${card.value} de ${card.suit}`}
+                  title={`${card.value} de ${card.suit}`}
+                  loading="lazy"
+                  className="hierarchy-card-thumb"
+                />
+              ))}
+            </div>
           </li>
         ))}
       </ol>

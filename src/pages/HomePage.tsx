@@ -36,9 +36,16 @@ function getInitialRoomCode(): string {
   return params.get("room") ?? "";
 }
 
+function formatRoomCode(value: string): string {
+  const normalized = value.toUpperCase().replace(/[^A-Z0-9]/g, "");
+  const digits = normalized.startsWith("FOD") ? normalized.slice(3) : normalized;
+  const codeDigits = digits.replace(/\D/g, "").slice(0, 4);
+  return codeDigits ? `FOD-${codeDigits}` : "";
+}
+
 export function HomePage() {
   const [nickname, setNickname] = useState("");
-  const [roomCode, setRoomCode] = useState(getInitialRoomCode);
+  const [roomCode, setRoomCode] = useState(() => formatRoomCode(getInitialRoomCode()));
   const [snapshot, setSnapshot] = useState<GameSnapshot | null>(null);
   const [currentPlayerId, setCurrentPlayerId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -405,7 +412,9 @@ export function HomePage() {
                 <span className="mb-2 block text-xs font-semibold uppercase tracking-wider text-white/60">Código da sala</span>
                 <input
                   value={roomCode}
-                  onChange={(event) => setRoomCode(event.target.value.toUpperCase())}
+                  inputMode="numeric"
+                  autoComplete="off"
+                  onChange={(event) => setRoomCode(formatRoomCode(event.target.value))}
                   placeholder="FOD-4821"
                   className="home-input w-full rounded-xl border border-white/10 bg-[#f8f6ef] px-4 py-4 font-mono text-base font-semibold uppercase tracking-widest text-mesa-950 placeholder:font-sans placeholder:tracking-normal placeholder:text-zinc-400"
                 />

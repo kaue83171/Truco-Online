@@ -45,6 +45,16 @@ body {
   mask-image: linear-gradient(90deg, transparent, black 45%, black);
 }
 
+.home-shell::after {
+  position: absolute;
+  inset: 1rem;
+  border: 1px solid rgba(229, 189, 125, 0.045);
+  border-radius: 1.5rem;
+  box-shadow: inset 0 0 8rem rgba(0, 0, 0, 0.18);
+  content: "";
+  pointer-events: none;
+}
+
 .home-glow {
   position: absolute;
   width: 22rem;
@@ -136,10 +146,11 @@ select:focus-visible {
 
 .table-surface {
   background:
-    linear-gradient(90deg, rgba(255, 255, 255, 0.045) 1px, transparent 1px),
-    linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
-    #163427;
-  background-size: 26px 26px;
+    radial-gradient(ellipse at 50% 0%, rgba(231, 199, 132, 0.11), transparent 64%),
+    radial-gradient(circle at 1px 1px, rgba(226, 241, 213, 0.075) 0.7px, transparent 0.9px) 0 0 / 14px 14px,
+    repeating-linear-gradient(0deg, transparent 0 36px, rgba(255, 255, 255, 0.018) 37px, transparent 38px),
+    linear-gradient(145deg, #1a4330, #123523 54%, #0e2c20);
+  box-shadow: inset 0 1px rgba(244, 218, 165, 0.12), inset 0 -2rem 4rem rgba(0, 0, 0, 0.16);
 }
 
 .playing-card {
@@ -153,6 +164,23 @@ select:focus-visible {
   width: clamp(3rem, 12vw, 4.75rem);
 }
 
+.hierarchy-card-thumb {
+  position: relative;
+  width: 2.05rem;
+  height: 3rem;
+  border: 1px solid rgba(255, 250, 236, 0.88);
+  border-radius: 0.28rem;
+  background: #f8f6ef;
+  object-fit: cover;
+  box-shadow: 0 3px 9px rgba(0, 0, 0, 0.35);
+  transition: transform 160ms ease;
+}
+
+.hierarchy-card-thumb:hover {
+  z-index: 2;
+  transform: translateY(-4px) rotate(-2deg);
+}
+
 .card-back {
   background:
     linear-gradient(135deg, rgba(255, 250, 240, 0.22) 25%, transparent 25%) 0 0 / 18px 18px,
@@ -162,16 +190,18 @@ select:focus-visible {
 
 .table-board {
   background:
-    repeating-linear-gradient(3deg, rgba(232, 187, 122, 0.045) 0 1px, transparent 1px 9px),
+    repeating-linear-gradient(3deg, rgba(232, 187, 122, 0.06) 0 1px, transparent 1px 7px),
+    repeating-linear-gradient(90deg, transparent 0 31%, rgba(20, 10, 5, 0.13) 31.2%, transparent 31.5% 64%, rgba(20, 10, 5, 0.1) 64.2%, transparent 64.5%),
     radial-gradient(ellipse at 50% 45%, rgba(107, 66, 37, 0.3), transparent 70%),
-    linear-gradient(145deg, #3b281b, #24170f 48%, #422a18);
-  box-shadow: inset 0 0 0 0.45rem rgba(105, 66, 38, 0.72), inset 0 0 0 0.55rem rgba(227, 183, 121, 0.14), 0 1rem 3rem rgba(0, 0, 0, 0.2);
+    linear-gradient(145deg, #49301e, #29190f 48%, #4b301c);
+  box-shadow: inset 0 0 0 0.45rem rgba(105, 66, 38, 0.82), inset 0 0 0 0.55rem rgba(227, 183, 121, 0.19), inset 0 0.8rem 1.4rem rgba(255, 227, 172, 0.08), 0 1rem 3rem rgba(0, 0, 0, 0.24);
 }
 
 .table-oval {
   background:
-    radial-gradient(circle at 1px 1px, rgba(230, 241, 205, 0.08) 0.8px, transparent 1px) 0 0 / 13px 13px,
-    radial-gradient(ellipse at 50% 42%, rgba(55, 122, 80, 0.96), rgba(18, 66, 43, 0.99) 68%, rgba(18, 56, 38, 0.98));
+    radial-gradient(ellipse at 50% 14%, rgba(215, 241, 197, 0.12), transparent 56%),
+    radial-gradient(circle at 1px 1px, rgba(230, 241, 205, 0.09) 0.8px, transparent 1px) 0 0 / 13px 13px,
+    radial-gradient(ellipse at 50% 42%, rgba(55, 122, 80, 0.98), rgba(18, 66, 43, 0.99) 68%, rgba(18, 56, 38, 0.98));
   box-shadow:
     inset 0 0 0 0.65rem rgba(74, 43, 24, 0.94),
     inset 0 0 0 0.82rem rgba(217, 172, 105, 0.24),
