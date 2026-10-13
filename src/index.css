@@ -29,8 +29,9 @@ body {
 
 .home-shell {
   background:
-    radial-gradient(ellipse at 72% 46%, rgba(25, 70, 49, 0.34), transparent 48%),
-    linear-gradient(135deg, #07130f 0%, #0b1c15 48%, #101b14 100%);
+    radial-gradient(ellipse at 82% 42%, rgba(174, 105, 46, 0.2), transparent 37%),
+    radial-gradient(ellipse at 23% 52%, rgba(25, 91, 57, 0.33), transparent 52%),
+    linear-gradient(135deg, #08130e 0%, #10251b 49%, #171a12 100%);
 }
 
 .home-shell::before {
@@ -73,9 +74,22 @@ body {
 
 .home-card {
   position: relative;
-  border: 1px solid rgba(245, 237, 211, 0.13);
-  background: linear-gradient(145deg, rgba(21, 46, 34, 0.96), rgba(13, 32, 24, 0.96));
-  box-shadow: 0 28px 90px rgba(0, 0, 0, 0.34), inset 0 1px rgba(255, 255, 255, 0.04);
+  overflow: hidden;
+  border: 1px solid rgba(219, 173, 102, 0.24);
+  background:
+    radial-gradient(circle at 1px 1px, rgba(235, 221, 178, 0.035) 0.8px, transparent 1px) 0 0 / 15px 15px,
+    linear-gradient(145deg, rgba(25, 51, 37, 0.98), rgba(12, 29, 21, 0.98));
+  box-shadow: 0 28px 90px rgba(0, 0, 0, 0.4), inset 0 1px rgba(255, 255, 255, 0.05);
+}
+
+.home-card::before {
+  position: absolute;
+  top: 0;
+  right: 2rem;
+  left: 2rem;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(239, 194, 111, 0.74), transparent);
+  content: "";
 }
 
 .home-input { transition: box-shadow 160ms ease, border-color 160ms ease; }
@@ -112,9 +126,11 @@ select:focus-visible {
 }
 
 .felt-panel {
-  border: 1px solid rgba(248, 243, 232, 0.14);
-  background: rgba(15, 36, 27, 0.78);
-  box-shadow: 0 18px 40px rgba(3, 8, 6, 0.34);
+  border: 1px solid rgba(216, 175, 112, 0.19);
+  background:
+    radial-gradient(circle at 1px 1px, rgba(235, 221, 178, 0.035) 0.8px, transparent 1px) 0 0 / 15px 15px,
+    linear-gradient(145deg, rgba(20, 48, 34, 0.91), rgba(12, 31, 23, 0.92));
+  box-shadow: 0 18px 40px rgba(3, 8, 6, 0.34), inset 0 1px rgba(255, 255, 255, 0.035);
   backdrop-filter: blur(12px);
 }
 
@@ -146,17 +162,75 @@ select:focus-visible {
 
 .table-board {
   background:
-    radial-gradient(circle at center, rgba(255, 255, 255, 0.08) 0 1px, transparent 1px 100%) 0 0 / 24px 24px,
-    linear-gradient(135deg, rgba(8, 28, 19, 0.94), rgba(31, 54, 36, 0.88));
+    repeating-linear-gradient(3deg, rgba(232, 187, 122, 0.045) 0 1px, transparent 1px 9px),
+    radial-gradient(ellipse at 50% 45%, rgba(107, 66, 37, 0.3), transparent 70%),
+    linear-gradient(145deg, #3b281b, #24170f 48%, #422a18);
+  box-shadow: inset 0 0 0 0.45rem rgba(105, 66, 38, 0.72), inset 0 0 0 0.55rem rgba(227, 183, 121, 0.14), 0 1rem 3rem rgba(0, 0, 0, 0.2);
 }
 
 .table-oval {
   background:
-    radial-gradient(ellipse at center, rgba(49, 110, 74, 0.95), rgba(15, 58, 39, 0.98) 62%, rgba(72, 43, 25, 0.96) 64% 100%);
+    radial-gradient(circle at 1px 1px, rgba(230, 241, 205, 0.08) 0.8px, transparent 1px) 0 0 / 13px 13px,
+    radial-gradient(ellipse at 50% 42%, rgba(55, 122, 80, 0.96), rgba(18, 66, 43, 0.99) 68%, rgba(18, 56, 38, 0.98));
   box-shadow:
-    inset 0 0 0 0.7rem rgba(77, 45, 18, 0.55),
-    inset 0 0 2rem rgba(0, 0, 0, 0.34),
-    0 1.25rem 3rem rgba(0, 0, 0, 0.34);
+    inset 0 0 0 0.65rem rgba(74, 43, 24, 0.94),
+    inset 0 0 0 0.82rem rgba(217, 172, 105, 0.24),
+    inset 0 0 2rem rgba(0, 0, 0, 0.36),
+    0 1.25rem 3rem rgba(0, 0, 0, 0.38);
+}
+
+.help-backdrop {
+  background: rgba(3, 8, 5, 0.8);
+  backdrop-filter: blur(8px);
+}
+
+.help-modal {
+  position: relative;
+  border: 1px solid rgba(218, 177, 111, 0.28);
+  background:
+    radial-gradient(circle at 1px 1px, rgba(238, 224, 184, 0.04) 0.8px, transparent 1px) 0 0 / 16px 16px,
+    linear-gradient(145deg, #183627, #10241a 62%, #1c2417);
+  box-shadow: 0 30px 90px rgba(0, 0, 0, 0.58), inset 0 1px rgba(255, 255, 255, 0.04);
+}
+
+.help-modal::before {
+  position: absolute;
+  top: 0;
+  right: 2rem;
+  left: 2rem;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(237, 191, 109, 0.7), transparent);
+  content: "";
+  pointer-events: none;
+}
+
+.help-tabs {
+  border: 1px solid rgba(245, 230, 193, 0.09);
+  background: rgba(3, 15, 9, 0.4);
+}
+
+.help-rule-card {
+  display: flex;
+  gap: 0.8rem;
+  border: 1px solid rgba(245, 230, 193, 0.09);
+  border-radius: 0.85rem;
+  background: rgba(4, 16, 10, 0.25);
+  padding: 1rem;
+}
+
+.help-rule-number {
+  display: grid;
+  width: 2rem;
+  height: 2rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid rgba(239, 199, 125, 0.24);
+  border-radius: 0.65rem;
+  background: rgba(239, 199, 125, 0.1);
+  color: #f3d394;
+  font-family: Georgia, serif;
+  font-size: 0.75rem;
+  font-weight: 700;
 }
 
 .player-seat {

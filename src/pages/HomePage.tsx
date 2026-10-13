@@ -343,7 +343,7 @@ export function HomePage() {
             onClick={() => setTutorialOpen(true)}
             className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.04] px-4 py-2 text-sm text-white/80 transition hover:border-amber-200/40 hover:bg-white/[0.08]"
           >
-            <HelpCircle size={16} /> regras
+            <HelpCircle size={16} /> ajuda
           </button>
         </header>
 

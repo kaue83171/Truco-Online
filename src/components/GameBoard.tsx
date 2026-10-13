@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
-import { LogOut } from "lucide-react";
+import { CircleHelp, LogOut } from "lucide-react";
 import { BettingPanel } from "./BettingPanel";
 import { GameEvents } from "./GameEvents";
 import { Hand } from "./Hand";
 import { RoundResult } from "./RoundResult";
 import { TableBoard } from "./TableBoard";
+import { TutorialModal } from "./TutorialModal";
 import { getBidTimeLimitSeconds, getForbiddenFinalBid } from "../lib/gameEngine";
 import type { VisibleGameSnapshot } from "../types/game";
 
@@ -104,6 +105,7 @@ export function GameBoard({
   );
   const bidTimeLimitSeconds = getBidTimeLimitSeconds(snapshot);
   const [bidSecondsLeft, setBidSecondsLeft] = useState(bidTimeLimitSeconds);
+  const [helpOpen, setHelpOpen] = useState(false);
   const showHand =
     Boolean(currentPlayer) &&
     (snapshot.room.status === "betting" || snapshot.room.status === "playing") &&
@@ -162,14 +164,24 @@ export function GameBoard({
           </p>
           <h1 className="font-display text-2xl font-bold text-white sm:text-3xl">Fodinha</h1>
         </div>
-        <button
-          type="button"
-          onClick={onLeave}
-          className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-white/15 px-2.5 py-1.5 text-xs text-white/80 transition hover:bg-white/10 sm:gap-2 sm:px-3 sm:py-2 sm:text-sm"
-        >
-          <LogOut size={16} />
-          Sair da sala
-        </button>
+        <div className="flex shrink-0 items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setHelpOpen(true)}
+            className="inline-flex items-center gap-1.5 rounded-xl border border-amber-100/20 bg-amber-100/[0.06] px-2.5 py-1.5 text-xs font-semibold text-amber-50/85 transition hover:border-amber-100/40 hover:bg-amber-100/[0.12] sm:gap-2 sm:px-3 sm:py-2 sm:text-sm"
+          >
+            <CircleHelp size={16} />
+            Ajuda
+          </button>
+          <button
+            type="button"
+            onClick={onLeave}
+            className="inline-flex items-center gap-1.5 rounded-xl border border-white/15 px-2.5 py-1.5 text-xs text-white/80 transition hover:bg-white/10 sm:gap-2 sm:px-3 sm:py-2 sm:text-sm"
+          >
+            <LogOut size={16} />
+            Sair da sala
+          </button>
+        </div>
       </header>
 
       <section className="felt-panel rounded-md p-2.5 sm:p-4">
@@ -245,6 +257,11 @@ export function GameBoard({
           onNextRound={onNextRound}
         />
       </div>
+      <TutorialModal
+        open={helpOpen}
+        onClose={() => setHelpOpen(false)}
+        initialTab="hierarchy"
+      />
     </main>
   );
 }
