@@ -55,3 +55,7 @@ Substitua `URL_DO_SEU_REPOSITORIO` pelo endereço do repositório que você crio
 ## Site parta jogar:
 
 https://truco-online-delta.vercel.app/
+
+
+## Sera Feito atualizações para poder jogar truco normal gaucho no site tambem.
+
