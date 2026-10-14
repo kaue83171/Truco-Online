@@ -195,6 +195,8 @@ export function callTruco(snapshot: GameSnapshot, playerId: string, type: Exclud
   const pending: TrucoPendingCall = { type, byPlayerId: playerId, points: pointsForCall(type), answeredByPlayerId: null };
   truco.pendingCall = pending;
   truco.phase = "call";
+  truco.currentTurnPlayerId = nextPlayer(draft, playerId);
+  draft.room.currentTurnPlayerId = truco.currentTurnPlayerId;
   truco.lastAction = `${draft.players.find((player) => player.id === playerId)?.name ?? "Jogador"} cantou ${type}`;
   draft.room.updatedAt = now();
   return draft;
@@ -215,6 +217,8 @@ export function answerTrucoCall(snapshot: GameSnapshot, playerId: string, accept
     truco.acceptedCall = pending.type;
     truco.pendingCall = null;
     truco.phase = "playing";
+    truco.currentTurnPlayerId = nextPlayer(draft, pending.byPlayerId);
+    draft.room.currentTurnPlayerId = truco.currentTurnPlayerId;
     truco.lastAction = `${draft.players.find((entry) => entry.id === playerId)?.name ?? "Jogador"} aceitou o canto`;
   }
   draft.room.updatedAt = now();
