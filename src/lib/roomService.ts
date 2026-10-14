@@ -6,7 +6,7 @@ import {
   setPlayerConnection,
 } from "./gameEngine";
 import { isSupabaseConfigured, supabase } from "./supabaseClient";
-import type { GameSnapshot, Player, RoomRecord } from "../types/game";
+import type { GameMode, GameSnapshot, Player, RoomRecord } from "../types/game";
 
 const SESSION_KEY = "fodinha-session";
 const MAX_PLAYERS = 10;
@@ -197,14 +197,14 @@ async function insertRoom(snapshot: GameSnapshot): Promise<GameSnapshot> {
   return snapshot;
 }
 
-export async function createRoom(name: string): Promise<RoomEntry> {
+export async function createRoom(name: string, gameMode: GameMode = "fodinha"): Promise<RoomEntry> {
   const roomId = crypto.randomUUID();
   const host = createPlayer(roomId, name, { isHost: true });
   let lastError: unknown;
 
   for (let attempt = 0; attempt < 5; attempt += 1) {
     const code = makeRoomCode();
-    const snapshot = createInitialSnapshot(roomId, code, host);
+    const snapshot = createInitialSnapshot(roomId, code, host, gameMode);
 
     try {
       await insertRoom(snapshot);

@@ -13,6 +13,8 @@ import type {
   RoundPlayerResult,
   StartingLives,
   TableCard,
+  GameMode,
+  TrucoGameState,
 } from "../types/game";
 
 const MIN_PLAYERS = 3;
@@ -151,7 +153,7 @@ function updateRoom(snapshot: GameSnapshot, updates: Partial<Room>): GameSnapsho
   };
 }
 
-function createEmptyGameState(roomId: string): GameState {
+function createEmptyGameState(roomId: string, gameMode: GameMode = "fodinha"): GameState {
   return {
     roomId,
     deck: [],
@@ -165,6 +167,29 @@ function createEmptyGameState(roomId: string): GameState {
     lastTrickWinnerId: null,
     lastTrickMessage: null,
     events: [],
+    truco: gameMode === "truco-gaucho" ? createEmptyTrucoState() : undefined,
+  };
+}
+
+export function createEmptyTrucoState(): TrucoGameState {
+  return {
+    phase: "waiting",
+    teamPoints: { A: 0, B: 0 },
+    teamMatchsticks: { A: 0, B: 0 },
+    teamHandsWon: { A: 0, B: 0 },
+    playerTeams: {},
+    currentDealerId: null,
+    currentTurnPlayerId: null,
+    handNumber: 0,
+    trickNumber: 0,
+    tricksWon: {},
+    tableCards: [],
+    deck: [],
+    pendingCall: null,
+    acceptedCall: "none",
+    handWinnerTeam: null,
+    handMessage: null,
+    lastAction: null,
   };
 }
 
@@ -374,7 +399,12 @@ function ensureStatus(snapshot: GameSnapshot, allowedStatuses: RoomStatus[]): vo
   }
 }
 
-export function createInitialSnapshot(roomId: string, code: string, host: Player): GameSnapshot {
+export function createInitialSnapshot(
+  roomId: string,
+  code: string,
+  host: Player,
+  gameMode: GameMode = "fodinha"
+): GameSnapshot {
   const createdAt = nowIso();
 
   return {
@@ -403,9 +433,10 @@ export function createInitialSnapshot(roomId: string, code: string, host: Player
       trickResultEndsAt: null,
       createdAt,
       updatedAt: createdAt,
+      gameMode,
     },
     players: [host],
-    gameState: createEmptyGameState(roomId),
+    gameState: createEmptyGameState(roomId, gameMode),
   };
 }
 
@@ -432,7 +463,7 @@ export function startGame(snapshot: GameSnapshot): GameSnapshot {
   const resetSnapshot: GameSnapshot = {
     ...draft,
     players: resetPlayers,
-    gameState: createEmptyGameState(draft.room.id),
+    gameState: createEmptyGameState(draft.room.id, draft.room.gameMode),
     room: {
       ...draft.room,
       status: "lobby",
@@ -1207,7 +1238,7 @@ export function resetGame(snapshot: GameSnapshot): GameSnapshot {
     {
       ...draft,
       players,
-      gameState: createEmptyGameState(draft.room.id),
+      gameState: createEmptyGameState(draft.room.id, draft.room.gameMode),
     },
     {
       status: "lobby",

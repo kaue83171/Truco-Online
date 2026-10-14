@@ -21,6 +21,10 @@ export type RoomStatus =
 
 export type TrickPhase = "idle" | "playing" | "result";
 export type StartingLives = 3 | 5;
+export type GameMode = "fodinha" | "truco-gaucho";
+export type TrucoTeam = "A" | "B";
+export type TrucoCall = "none" | "envido" | "flor" | "truco" | "retruco" | "vale-quatro";
+export type TrucoPhase = "waiting" | "dealing" | "playing" | "call" | "hand-result" | "match-result";
 
 export type Card = {
   id: string;
@@ -63,6 +67,7 @@ export type Room = {
   trickResultEndsAt?: string | null;
   createdAt: string;
   updatedAt: string;
+  gameMode?: GameMode;
 };
 
 export type Player = {
@@ -81,6 +86,7 @@ export type Player = {
   tricksWon: number;
   hand: Card[];
   joinedAt: string;
+  isBot?: boolean;
 };
 
 export type RoundPlayerResult = {
@@ -154,6 +160,34 @@ export type GameState = {
   lastTrickWinnerId: string | null;
   lastTrickMessage: string | null;
   events?: GameEvent[];
+  truco?: TrucoGameState;
+};
+
+export type TrucoPendingCall = {
+  type: Exclude<TrucoCall, "none">;
+  byPlayerId: string;
+  points: number;
+  answeredByPlayerId?: string | null;
+};
+
+export type TrucoGameState = {
+  phase: TrucoPhase;
+  teamPoints: Record<TrucoTeam, number>;
+  teamMatchsticks: Record<TrucoTeam, number>;
+  teamHandsWon: Record<TrucoTeam, number>;
+  playerTeams: Record<string, TrucoTeam>;
+  currentDealerId: string | null;
+  currentTurnPlayerId: string | null;
+  handNumber: number;
+  trickNumber: number;
+  tricksWon: Record<string, number>;
+  tableCards: TableCard[];
+  deck: Card[];
+  pendingCall: TrucoPendingCall | null;
+  acceptedCall: TrucoCall;
+  handWinnerTeam: TrucoTeam | null;
+  handMessage: string | null;
+  lastAction: string | null;
 };
 
 export type GameSnapshot = {

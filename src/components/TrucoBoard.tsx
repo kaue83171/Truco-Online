@@ -1,0 +1,77 @@
+import { LogOut, MessageCircle, Shield, Trophy } from "lucide-react";
+import { PlayingCard } from "./Card";
+import type { GameSnapshot, TrucoCall, VisibleGameSnapshot } from "../types/game";
+
+type Props = {
+  snapshot: VisibleGameSnapshot;
+  currentPlayerId: string | null;
+  isBusy: boolean;
+  onLeave: () => void;
+  onPlayCard: (cardId: string) => void;
+  onCall: (call: Exclude<TrucoCall, "none">) => void;
+  onAnswer: (accept: boolean) => void;
+  onNextHand: () => void;
+};
+
+export function TrucoBoard({ snapshot, currentPlayerId, isBusy, onLeave, onPlayCard, onCall, onAnswer, onNextHand }: Props) {
+  const truco = snapshot.gameState.truco;
+  const current = snapshot.players.find((player) => player.id === currentPlayerId);
+  const pending = truco?.pendingCall;
+  if (!truco || !current) return null;
+  const isMyTurn = truco.currentTurnPlayerId === currentPlayerId;
+  const teamOf = (id: string) => truco.playerTeams[id] ?? "A";
+  const tableCards = truco.tableCards;
+  const canCall = isMyTurn && truco.phase === "playing" && !pending;
+  const calls: Array<{ type: Exclude<TrucoCall, "none">; label: string }> = [
+    { type: "envido", label: "Envido" },
+    { type: "flor", label: "Flor" },
+    { type: "truco", label: "Truco" },
+    { type: "retruco", label: "Retruco" },
+    { type: "vale-quatro", label: "Vale quatro" },
+  ];
+  return (
+    <main className="min-h-screen px-4 py-5 sm:px-8">
+      <header className="mx-auto flex max-w-6xl items-center justify-between gap-3">
+        <div>
+          <p className="text-xs uppercase tracking-[0.22em] text-amber-200/70">truco gaúcho</p>
+          <h1 className="font-display text-3xl font-bold text-white">A mesa está valendo</h1>
+        </div>
+        <button type="button" onClick={onLeave} className="inline-flex items-center gap-2 rounded-xl border border-white/15 px-3 py-2 text-sm text-white/75 hover:bg-white/10"><LogOut size={16} /> sair</button>
+      </header>
+      <section className="mx-auto mt-5 grid max-w-6xl gap-4 lg:grid-cols-[1fr_18rem]">
+        <div className="table-board min-h-[34rem] rounded-[2rem] p-4 sm:p-7">
+          <div className="table-oval relative flex min-h-[32rem] flex-col justify-between rounded-[45%] p-5 sm:p-8">
+            <div className="flex flex-wrap justify-between gap-3 text-sm">
+              {(["A", "B"] as const).map((team) => (
+                <div key={team} className="rounded-xl border border-white/15 bg-black/20 px-4 py-2 text-white"><span className="text-white/50">equipe {team}</span><strong className="ml-2 text-xl text-amber-200">{truco.teamPoints[team]}</strong><span className="ml-2 text-xs text-white/40">palitos</span></div>
+              ))}
+            </div>
+            <div className="mx-auto flex min-h-36 items-center justify-center gap-1 rounded-2xl border border-white/10 bg-black/10 px-4 py-5">
+              {tableCards.length ? tableCards.map((entry) => <PlayingCard key={entry.id} card={entry.card} compact />) : <p className="text-sm text-white/40">Jogue uma carta no centro da mesa</p>}
+            </div>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+              {snapshot.players.filter((player) => !player.isSpectator).map((player) => (
+                <div key={player.id} className={`rounded-xl border p-2 text-xs ${truco.currentTurnPlayerId === player.id ? "border-amber-200/60 bg-amber-100/10" : "border-white/10 bg-black/15"}`}>
+                  <div className="flex items-center justify-between gap-2 text-white"><span className="truncate">{player.name}{player.isBot ? " · bot" : ""}</span><span className="text-amber-200">{teamOf(player.id)}</span></div>
+                  <span className="text-white/45">{player.id === currentPlayerId ? "você" : truco.tricksWon[player.id] ?? 0} vazas</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+        <aside className="felt-panel rounded-2xl p-4 sm:p-5">
+          <div className="flex items-center gap-2 text-sm text-white/70"><Trophy size={17} className="text-amber-200" /> placar até 12</div>
+          <div className="mt-4 grid grid-cols-2 gap-2 text-center"><div className="rounded-xl bg-white/[0.06] p-3"><p className="text-xs text-white/45">Equipe A</p><p className="text-3xl font-bold text-amber-200">{truco.teamPoints.A}</p></div><div className="rounded-xl bg-white/[0.06] p-3"><p className="text-xs text-white/45">Equipe B</p><p className="text-3xl font-bold text-amber-200">{truco.teamPoints.B}</p></div></div>
+          <div className="mt-5 rounded-xl border border-white/10 bg-black/10 p-3 text-sm text-white/65"><Shield size={16} className="mb-2 text-amber-200" />{truco.lastAction ?? "Aguardando ação"}</div>
+          {pending ? <div className="mt-4 rounded-xl border border-amber-200/30 bg-amber-200/10 p-3"><p className="text-sm font-semibold text-amber-100">{pending.type} — vale {pending.points}</p><div className="mt-3 grid grid-cols-2 gap-2"><button type="button" disabled={isBusy} onClick={() => onAnswer(true)} className="rounded-lg bg-amber-200 px-2 py-2 text-sm font-bold text-mesa-950">aceitar</button><button type="button" disabled={isBusy} onClick={() => onAnswer(false)} className="rounded-lg border border-white/20 px-2 py-2 text-sm text-white">correr</button></div></div> : null}
+          {truco.phase === "hand-result" ? <button type="button" onClick={onNextHand} disabled={isBusy} className="mt-4 w-full rounded-lg bg-amber-200 px-3 py-3 font-bold text-mesa-950">próxima mão</button> : null}
+          {truco.phase === "match-result" ? <div className="mt-4 rounded-xl border border-amber-200/30 bg-amber-200/10 p-3 text-center"><p className="text-xs uppercase tracking-wider text-amber-100/70">partida encerrada</p><p className="mt-1 font-bold text-amber-100">Equipe {truco.teamPoints.A >= 12 ? "A" : "B"} venceu!</p></div> : null}
+          <div className="mt-5 border-t border-white/10 pt-4"><p className="mb-2 text-xs uppercase tracking-wider text-white/45">cantos</p><div className="grid grid-cols-2 gap-2">{calls.map((call) => <button key={call.type} type="button" disabled={!canCall || isBusy} onClick={() => onCall(call.type)} className="inline-flex items-center justify-center gap-1 rounded-lg border border-white/15 px-2 py-2 text-xs font-semibold text-white/80 hover:border-amber-200/50 disabled:opacity-35"><MessageCircle size={13} />{call.label}</button>)}</div></div>
+          <div className="mt-5 border-t border-white/10 pt-4"><p className="mb-2 text-xs uppercase tracking-wider text-white/45">suas cartas</p><div className="flex gap-2">{current.hand.map((card) => <PlayingCard key={card.id} card={card} compact disabled={!isMyTurn || isBusy} onClick={() => onPlayCard(card.id)} />)}</div></div>
+        </aside>
+      </section>
+    </main>
+  );
+}
+
+export type TrucoSnapshot = GameSnapshot;

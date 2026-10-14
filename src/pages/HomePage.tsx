@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
-import { ArrowDownRight, HelpCircle, LogIn, Plus, Sparkles, WifiOff } from "lucide-react";
+import { ArrowDownRight, HelpCircle, LogIn, Plus, Sparkles, WifiOff, Swords } from "lucide-react";
 import { FinalResult } from "../components/FinalResult";
 import { GameBoard } from "../components/GameBoard";
 import { Lobby } from "../components/Lobby";
 import { TutorialModal } from "../components/TutorialModal";
+import { TrucoBoard } from "../components/TrucoBoard";
 import {
   advanceAfterTrickResult,
   autoSubmitCurrentBid,
@@ -30,6 +31,8 @@ import {
 import { subscribeToPresence, subscribeToRoomState } from "../lib/realtimeService";
 import { getVisibleGameStateForPlayer } from "../lib/visibleState";
 import type { GameSnapshot } from "../types/game";
+import { addTrucoBot, answerTrucoCall, callTruco, nextTrucoHand, playBotTurn, playTrucoCard, startTrucoGame } from "../lib/trucoEngine";
+import type { GameMode, TrucoCall } from "../types/game";
 
 function getInitialRoomCode(): string {
   const params = new URLSearchParams(window.location.search);
@@ -192,6 +195,18 @@ export function HomePage() {
     return () => window.clearTimeout(timeoutId);
   }, [currentPlayerId, snapshot]);
 
+  useEffect(() => {
+    if (!snapshot || snapshot.room.gameMode !== "truco-gaucho" || snapshot.room.hostId !== currentPlayerId) return undefined;
+    const truco = snapshot.gameState.truco;
+    const bot = snapshot.players.find((player) => player.id === truco?.currentTurnPlayerId && player.isBot);
+    if (!bot || !truco || truco.phase === "hand-result" || truco.phase === "match-result") return undefined;
+    const timeout = window.setTimeout(() => {
+      setIsBusy(true);
+      updateRoom(snapshot.room.id, playBotTurn).then(setSnapshot).catch(() => undefined).finally(() => setIsBusy(false));
+    }, 900);
+    return () => window.clearTimeout(timeout);
+  }, [currentPlayerId, snapshot]);
+
   async function runAction(action: () => Promise<GameSnapshot | null | void>) {
     setError(null);
     setIsBusy(true);
@@ -219,9 +234,9 @@ export function HomePage() {
     return trimmedName;
   }
 
-  async function handleCreateRoom() {
+  async function handleCreateRoom(mode: GameMode = "fodinha") {
     await runAction(async () => {
-      const roomEntry = await createRoom(ensureNickname());
+      const roomEntry = await createRoom(ensureNickname(), mode);
       setCurrentPlayerId(roomEntry.playerId);
       return roomEntry.snapshot;
     });
@@ -276,7 +291,7 @@ export function HomePage() {
           currentPlayerId={currentPlayerId}
           isBusy={isBusy}
           onLeave={handleLeave}
-          onStartGame={() => handleSnapshotUpdate(startGame)}
+          onStartGame={() => handleSnapshotUpdate(visibleSnapshot.room.gameMode === "truco-gaucho" ? startTrucoGame : startGame)}
           onSetBidTimeLimit={(seconds) =>
             handleSnapshotUpdate((current) => setBidTimeLimit(current, seconds))
           }
@@ -284,6 +299,7 @@ export function HomePage() {
             handleSnapshotUpdate((current) => setStartingLives(current, lives))
           }
           onKickPlayer={handleKickPlayer}
+          onAddBot={visibleSnapshot.room.gameMode === "truco-gaucho" ? () => handleSnapshotUpdate((current) => addTrucoBot(current, `Bot ${current.players.filter((player) => player.isBot).length + 1}`)) : undefined}
         />
         {error ? <ErrorToast message={error} /> : null}
       </>
@@ -306,6 +322,9 @@ export function HomePage() {
   }
 
   if (visibleSnapshot) {
+    if (visibleSnapshot.room.gameMode === "truco-gaucho") {
+      return <><TrucoBoard snapshot={visibleSnapshot} currentPlayerId={currentPlayerId} isBusy={isBusy} onLeave={handleLeave} onPlayCard={(cardId) => currentPlayerId ? handleSnapshotUpdate((current) => playTrucoCard(current, currentPlayerId, cardId)) : undefined} onCall={(call: Exclude<TrucoCall, "none">) => currentPlayerId ? handleSnapshotUpdate((current) => callTruco(current, currentPlayerId, call)) : undefined} onAnswer={(accept) => currentPlayerId ? handleSnapshotUpdate((current) => answerTrucoCall(current, currentPlayerId, accept)) : undefined} onNextHand={() => handleSnapshotUpdate(nextTrucoHand)} />{error ? <ErrorToast message={error} /> : null}</>;
+    }
     return (
       <>
         <GameBoard
@@ -343,7 +362,7 @@ export function HomePage() {
         <header className="flex items-center justify-between">
           <a href="#inicio" className="flex items-center gap-3 text-white" aria-label="Fodinha, início">
             <span className="brand-mark" aria-hidden="true">F</span>
-            <span className="text-sm font-semibold tracking-wide">jogo de mesa <span className="text-amber-200">online</span></span>
+            <span className="text-sm font-semibold tracking-wide">Truco <span className="text-amber-200">Online</span></span>
           </a>
           <button
             type="button"
@@ -360,7 +379,7 @@ export function HomePage() {
               <Sparkles size={14} className="text-amber-200" /> partidas com os amigos, de onde estiverem
             </div>
             <p className="text-sm font-semibold uppercase tracking-[0.24em] text-amber-200/80">truco gaúcho • palpites • blefe</p>
-            <h1 className="mt-3 font-display text-6xl font-bold leading-[0.95] tracking-tight text-[#fffaf0] sm:text-8xl">Fodinha<span className="text-amber-300">.</span></h1>
+            <h1 className="mt-3 font-display text-6xl font-bold leading-[0.95] tracking-tight text-[#fffaf0] sm:text-8xl">Truco Online<span className="text-amber-300">.</span></h1>
             <p className="mt-6 max-w-xl text-lg leading-8 text-emerald-50/65 sm:text-xl">
               Adivinhe suas vazas, leia a mesa e tente sobreviver até o fim. Reúna a turma numa sala privada e jogue direto pelo navegador.
             </p>
@@ -397,15 +416,18 @@ export function HomePage() {
               />
             </label>
 
+            <div className="grid gap-3 sm:grid-cols-2">
             <button
               type="button"
               disabled={isBusy}
-              onClick={handleCreateRoom}
+              onClick={() => void handleCreateRoom("fodinha")}
               className="create-room-button inline-flex w-full items-center justify-center gap-2 rounded-xl bg-amber-300 px-4 py-4 font-bold text-mesa-950 transition hover:bg-amber-200 disabled:cursor-not-allowed disabled:opacity-45"
             >
               <Plus size={18} />
-              Criar uma sala <ArrowDownRight size={17} />
+              Criar sala Fodinha <ArrowDownRight size={17} />
             </button>
+            <button type="button" disabled={isBusy} onClick={() => void handleCreateRoom("truco-gaucho")} className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-amber-200/30 bg-amber-100/[0.08] px-4 py-4 font-bold text-amber-100 transition hover:bg-amber-100/[0.15] disabled:cursor-not-allowed disabled:opacity-45"><Swords size={18} /> Criar sala Truco Gaúcho <ArrowDownRight size={17} /></button>
+            </div>
 
             <div className="relative py-1 text-center text-xs font-medium uppercase tracking-[0.2em] text-white/30"><span className="relative z-10 bg-[#10251c] px-3">ou entre com convite</span><span className="absolute left-0 right-0 top-1/2 border-t border-white/10" /></div>
               <label className="block">
@@ -434,7 +456,7 @@ export function HomePage() {
           </section>
         </div>
         <footer className="flex items-center justify-between border-t border-white/[0.08] pt-4 text-xs text-white/30">
-          <span>Fodinha Online</span><span>Feito para jogar entre amigos</span>
+          <span>Truco Online</span><span>Feito para jogar entre amigos</span>
         </footer>
       </div>
 

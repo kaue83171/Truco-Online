@@ -15,6 +15,7 @@ type LobbyProps = {
   onKickPlayer: (playerId: string) => void;
   onLeave: () => void;
   isBusy?: boolean;
+  onAddBot?: () => void;
 };
 
 export function Lobby({
@@ -26,11 +27,13 @@ export function Lobby({
   onKickPlayer,
   onLeave,
   isBusy = false,
+  onAddBot,
 }: LobbyProps) {
   const seatedPlayers = snapshot.players.filter((player) => !player.isSpectator);
   const currentPlayer = snapshot.players.find((player) => player.id === currentPlayerId);
   const isHost = currentPlayer?.id === snapshot.room.hostId;
-  const canStart = isHost && seatedPlayers.length >= 3;
+  const isTruco = snapshot.room.gameMode === "truco-gaucho";
+  const canStart = isHost && (isTruco ? [2, 4, 6].includes(seatedPlayers.length) : seatedPlayers.length >= 3);
   const bidTimeLimitSeconds = getBidTimeLimitSeconds(snapshot);
   const startingLives = getStartingLives(snapshot);
 
@@ -59,7 +62,7 @@ export function Lobby({
 
       <header className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="font-display text-4xl font-bold text-white">Fodinha</h1>
+          <h1 className="font-display text-4xl font-bold text-white">{isTruco ? "Truco Gaúcho" : "Fodinha"}</h1>
           <p className="text-sm text-white/65">Sala privada para jogar com amigos.</p>
         </div>
         <button
@@ -108,7 +111,7 @@ export function Lobby({
               <Users size={20} />
               Jogadores
             </h2>
-            <span className="text-sm text-white/65">{seatedPlayers.length}/10</span>
+            <span className="text-sm text-white/65">{seatedPlayers.length}/{isTruco ? 6 : 10}</span>
           </div>
           <PlayerList
             players={snapshot.players}
@@ -122,14 +125,19 @@ export function Lobby({
         <aside className="felt-panel rounded-md p-5">
           <h2 className="text-lg font-semibold text-white">Iniciar partida</h2>
           <p className="mt-2 text-sm text-white/65">
-            Mínimo 3 jogadores. O host controla o início da partida e as próximas rodadas.
+            {isTruco ? "Escolha 2, 4 ou 6 jogadores. Você também pode completar lugares com bots." : "Mínimo 3 jogadores. O host controla o início da partida e as próximas rodadas."}
           </p>
-          {seatedPlayers.length < 3 ? (
+          {isTruco && onAddBot && seatedPlayers.length < 6 ? (
+            <button type="button" disabled={!isHost || isBusy} onClick={onAddBot} className="mt-4 w-full rounded-md border border-amber-100/20 px-3 py-2 text-sm font-semibold text-amber-100 hover:bg-white/10 disabled:opacity-50">
+              + adicionar bot ({seatedPlayers.length}/6)
+            </button>
+          ) : null}
+          {(!isTruco && seatedPlayers.length < 3) || (isTruco && ![2, 4, 6].includes(seatedPlayers.length)) ? (
             <p className="mt-4 rounded-md border border-amber-300/30 bg-amber-300/10 p-3 text-sm text-amber-100">
-              Aguardando pelo menos 3 jogadores.
+              {isTruco ? "Use 2, 4 ou 6 lugares para iniciar." : "Aguardando pelo menos 3 jogadores."}
             </p>
           ) : null}
-          <label className="mt-5 block">
+          {!isTruco ? <label className="mt-5 block">
             <span className="mb-2 block text-sm font-medium text-white/75">
               Vidas iniciais
             </span>
@@ -145,8 +153,8 @@ export function Lobby({
             <span className="mt-1 block text-xs text-white/45">
               O anfitrião escolhe antes de iniciar a partida.
             </span>
-          </label>
-          <label className="mt-5 block">
+          </label> : null}
+          {!isTruco ? <label className="mt-5 block">
             <span className="mb-2 inline-flex items-center gap-2 text-sm font-medium text-white/75">
               <Clock size={16} />
               Tempo de palpite
@@ -163,7 +171,7 @@ export function Lobby({
                 </option>
               ))}
             </select>
-          </label>
+          </label> : null}
           <button
             type="button"
             disabled={!canStart || isBusy}
