@@ -28,9 +28,7 @@ export function TrucoBoard({ snapshot, currentPlayerId, isBusy, onLeave, onPlayC
     .map((id) => snapshot.players.find((player) => player.id === id))
     .filter((player): player is (typeof snapshot.players)[number] => Boolean(player && !player.isSpectator));
   const lastCompletedTrickIndex = completedTricks.length - 1;
-  const playedByPlayer = (playerId: string) => [...completedTricks.flat(), ...tableCards]
-    .filter((entry) => entry.playerId === playerId)
-    .sort((a, b) => a.trickNumber - b.trickNumber);
+  const cardsOnTable = tableCards.length > 0 ? tableCards : completedTricks[lastCompletedTrickIndex] ?? [];
   const canCall = isMyTurn && truco.phase === "playing" && !pending;
   const calls: Array<{ type: Exclude<TrucoCall, "none">; label: string }> = [
     { type: "envido", label: "Envido" },
@@ -56,22 +54,27 @@ export function TrucoBoard({ snapshot, currentPlayerId, isBusy, onLeave, onPlayC
                 <div key={team} className="rounded-xl border border-white/15 bg-black/20 px-4 py-2 text-white"><span className="text-white/50">equipe {team}</span><strong className="ml-2 text-xl text-amber-200">{truco.teamPoints[team]}</strong><span className="ml-2 text-xs text-white/40">palitos</span></div>
               ))}
             </div>
-            <div className="mx-auto flex min-h-20 items-center justify-center rounded-2xl border border-white/10 bg-black/10 px-4 py-4 text-center text-sm text-white/55">
-              {truco.lastAction ?? "A mão está começando"}
+            <div className="mx-auto flex min-h-24 w-full items-center justify-center px-2 py-3" aria-label="Cartas jogadas na mesa">
+              {cardsOnTable.length > 0 ? <div className="flex items-end justify-center py-2">
+                {cardsOnTable.map((entry, index) => {
+                  const playerName = snapshot.players.find((player) => player.id === entry.playerId)?.name ?? "Jogador";
+                  const isWinningCard = tableCards.length === 0 && lastCompletedTrickIndex >= 0 && entry.playerId === truco.lastTrickWinnerId;
+                  return <div key={entry.id} className={`flex flex-col items-center ${index > 0 ? "-ml-8 sm:-ml-12" : ""}`} style={{ zIndex: index + 1 }}>
+                    <span className="mb-1 max-w-16 truncate rounded bg-black/45 px-1.5 py-0.5 text-[10px] text-white/75">{playerName}</span>
+                    <span className={isWinningCard ? "rounded-md ring-2 ring-emerald-300 shadow-[0_0_1rem_rgba(110,231,183,0.7)]" : "drop-shadow-xl"}><PlayingCard card={entry.card} disabled /></span>
+                  </div>;
+                })}
+              </div> : <div className="rounded-2xl border border-white/10 bg-black/10 px-4 py-4 text-center text-sm text-white/45">{truco.lastAction ?? "As cartas jogadas aparecem aqui"}</div>}
             </div>
             <div className={`grid gap-2 ${orderedPlayers.length <= 2 ? "grid-cols-2" : orderedPlayers.length <= 4 ? "grid-cols-2" : "grid-cols-3"}`}>
               {orderedPlayers.map((player) => {
-                const playedCards = playedByPlayer(player.id);
                 const heldCards: Array<{ id: string; card?: Card; hidden: boolean }> = player.id === currentPlayerId
                   ? player.hand.map((card) => ({ id: card.id, card, hidden: false }))
                   : Array.from({ length: player.hiddenCardCount }, (_, index) => ({ id: `hidden-${player.id}-${index}`, hidden: true }));
                 return <div key={player.id} className={`rounded-xl border p-2 text-xs ${truco.currentTurnPlayerId === player.id ? "border-amber-200/60 bg-amber-100/10" : "border-white/10 bg-black/15"}`}>
+                  {truco.playerLastActions?.[player.id] ? <div className="relative mb-2 w-fit max-w-full rounded-xl border border-amber-100/25 bg-[#f7efdc] px-2.5 py-1.5 text-[11px] font-semibold text-emerald-950 shadow-lg"><span className="block truncate">{truco.playerLastActions[player.id]}</span><span className="absolute -bottom-1 left-4 h-2 w-2 rotate-45 border-b border-r border-amber-100/25 bg-[#f7efdc]" /></div> : null}
                   <div className="flex items-center justify-between gap-2 text-white"><span className="truncate">{player.name}{player.isBot ? " · bot" : ""}</span><span className="text-amber-200">equipe {teamOf(player.id)}</span></div>
                   <div className="mt-2 flex items-center gap-1 overflow-x-auto">
-                    {playedCards.map((entry) => {
-                      const isWinningCard = lastCompletedTrickIndex >= 0 && entry.trickNumber === completedTricks[lastCompletedTrickIndex]?.[0]?.trickNumber && entry.playerId === truco.lastTrickWinnerId;
-                      return <span key={entry.id} className={isWinningCard ? "rounded-md ring-2 ring-emerald-300 shadow-[0_0_0.8rem_rgba(110,231,183,0.65)]" : "rounded-md opacity-75"}><PlayingCard card={entry.card} compact disabled /></span>;
-                    })}
                     {heldCards.map((card) => <PlayingCard key={card.id} card={card.card} hidden={card.hidden} compact disabled={card.hidden || !isMyTurn || isBusy} onClick={card.hidden ? undefined : () => onPlayCard(card.id)} />)}
                   </div>
                   <span className="mt-1 block text-white/45">{player.id === currentPlayerId ? "você" : `${truco.tricksWon[player.id] ?? 0} vazas`}{truco.lastTrickWinnerId === player.id ? " · ganhou a última vaza" : ""}</span>

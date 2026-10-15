@@ -194,6 +194,7 @@ export type TrucoGameState = {
   handWinnerTeam: TrucoTeam | null;
   handMessage: string | null;
   lastAction: string | null;
+  playerLastActions?: Record<string, string>;
 };
 
 export type GameSnapshot = {

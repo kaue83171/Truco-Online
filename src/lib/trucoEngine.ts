@@ -141,6 +141,7 @@ function dealTrucoHand(snapshot: GameSnapshot, dealerId: string | null): GameSna
   truco.handWinnerTeam = null;
   truco.handMessage = null;
   truco.lastAction = `Mão ${truco.handNumber} distribuída`;
+  truco.playerLastActions = {};
   draft.room.status = "playing";
   draft.room.currentTurnPlayerId = nextStarter;
   draft.room.updatedAt = now();
@@ -175,6 +176,7 @@ export function startTrucoGame(snapshot: GameSnapshot): GameSnapshot {
     handWinnerTeam: null,
     handMessage: null,
     lastAction: null,
+    playerLastActions: {},
   };
   truco.targetPoints = truco.targetPoints ?? 30;
   const randomizedSeats = [...players].sort(() => Math.random() - 0.5);
@@ -212,6 +214,7 @@ export function playTrucoCard(snapshot: GameSnapshot, playerId: string, cardId: 
   player.hand = player.hand.filter((entry) => entry.id !== cardId);
   const tableCard: TableCard = { id: crypto.randomUUID(), card, playerId, playedAt: now(), trickNumber: truco.trickNumber };
   truco.tableCards.push(tableCard);
+  truco.playerLastActions = { ...(truco.playerLastActions ?? {}), [playerId]: `Jogou ${card.label}` };
   const players = activePlayers(draft);
   if (truco.tableCards.length < players.length) {
     truco.currentTurnPlayerId = nextPlayer(draft, playerId);
@@ -272,6 +275,7 @@ export function callTruco(snapshot: GameSnapshot, playerId: string, type: Exclud
   truco.currentTurnPlayerId = nextPlayer(draft, playerId);
   draft.room.currentTurnPlayerId = truco.currentTurnPlayerId;
   truco.lastAction = `${draft.players.find((player) => player.id === playerId)?.name ?? "Jogador"} cantou ${type}`;
+  truco.playerLastActions = { ...(truco.playerLastActions ?? {}), [playerId]: `Cantou ${type}` };
   draft.room.updatedAt = now();
   return draft;
 }
@@ -287,6 +291,7 @@ export function raiseRealEnvido(snapshot: GameSnapshot, playerId: string): GameS
   truco.currentTurnPlayerId = nextPlayer(draft, playerId);
   draft.room.currentTurnPlayerId = truco.currentTurnPlayerId;
   truco.lastAction = `${draft.players.find((player) => player.id === playerId)?.name ?? "Jogador"} aumentou para Real Envido`;
+  truco.playerLastActions = { ...(truco.playerLastActions ?? {}), [playerId]: "Aumentou para Real Envido" };
   draft.room.updatedAt = now();
   return draft;
 }
@@ -300,6 +305,7 @@ export function answerTrucoCall(snapshot: GameSnapshot, playerId: string, accept
     const winner = teamFor(draft, pending.byPlayerId);
     addPoints(draft, winner, pending.type === "real-envido" ? 2 : pending.type === "envido" ? 1 : Math.max(1, pending.points - 1));
     if (pending.type === "envido" || pending.type === "real-envido" || pending.type === "flor") {
+      truco.playerLastActions = { ...(truco.playerLastActions ?? {}), [playerId]: `Recusou ${pending.type}` };
       truco.pendingCall = null;
       const matchEnded = truco.teamPoints.A >= truco.targetPoints || truco.teamPoints.B >= truco.targetPoints;
       truco.phase = matchEnded ? "match-result" : "playing";
@@ -312,6 +318,7 @@ export function answerTrucoCall(snapshot: GameSnapshot, playerId: string, accept
       return draft;
     }
     truco.handWinnerTeam = winner;
+    truco.playerLastActions = { ...(truco.playerLastActions ?? {}), [playerId]: `Correu do ${pending.type}` };
     const awarded = Math.max(1, pending.points - 1);
     truco.handMessage = `Canto recusado. Equipe ${winner} marca ${awarded} ponto${awarded === 1 ? "" : "s"} e vence a mão.`;
     truco.phase = truco.teamPoints.A >= truco.targetPoints || truco.teamPoints.B >= truco.targetPoints ? "match-result" : "hand-result";
@@ -321,6 +328,7 @@ export function answerTrucoCall(snapshot: GameSnapshot, playerId: string, accept
     truco.lastAction = `Canto recusado: Equipe ${winner} marcou ${awarded} ponto${awarded === 1 ? "" : "s"}; mão encerrada.`;
   } else {
     if (pending.type === "envido" || pending.type === "real-envido") {
+      truco.playerLastActions = { ...(truco.playerLastActions ?? {}), [playerId]: `Aceitou ${pending.type}` };
       const originalCallerId = pending.originalCallerId ?? pending.byPlayerId;
       const winner = winningEnvidoTeam(draft, teamFor(draft, originalCallerId));
       addPoints(draft, winner, pending.type === "real-envido" ? 5 : 2);
@@ -339,6 +347,7 @@ export function answerTrucoCall(snapshot: GameSnapshot, playerId: string, accept
     truco.currentTurnPlayerId = pending.originalCallerId ?? pending.byPlayerId;
     draft.room.currentTurnPlayerId = truco.currentTurnPlayerId;
     truco.lastAction = `${draft.players.find((entry) => entry.id === playerId)?.name ?? "Jogador"} aceitou o canto`;
+    truco.playerLastActions = { ...(truco.playerLastActions ?? {}), [playerId]: `Aceitou ${pending.type}` };
   }
   draft.room.updatedAt = now();
   return draft;
