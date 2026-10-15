@@ -14,7 +14,8 @@ function shouldHideHand(
   }
 
   if (snapshot.room.gameMode === "truco-gaucho") {
-    return false;
+    if (!viewer || viewer.isSpectator || !viewer.isAlive) return true;
+    return owner.id !== viewer.id;
   }
 
   if (!viewer || viewer.isSpectator || !viewer.isAlive) {
@@ -49,6 +50,9 @@ export function getVisibleGameStateForPlayer(
     gameState: {
       ...gameState.gameState,
       deck: [],
+      truco: gameState.gameState.truco
+        ? { ...gameState.gameState.truco, deck: [] }
+        : undefined,
     },
     players: visiblePlayers,
   };

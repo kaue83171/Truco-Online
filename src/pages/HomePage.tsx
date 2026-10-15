@@ -31,7 +31,7 @@ import {
 import { subscribeToPresence, subscribeToRoomState } from "../lib/realtimeService";
 import { getVisibleGameStateForPlayer } from "../lib/visibleState";
 import type { GameSnapshot } from "../types/game";
-import { addTrucoBot, answerTrucoCall, callTruco, nextTrucoHand, playBotTurn, playTrucoCard, setTrucoTargetPoints, startTrucoGame } from "../lib/trucoEngine";
+import { addTrucoBot, answerTrucoCall, callTruco, nextTrucoHand, playBotTurn, playTrucoCard, raiseRealEnvido, setTrucoTargetPoints, startTrucoGame } from "../lib/trucoEngine";
 import type { GameMode, TrucoCall } from "../types/game";
 
 function getInitialRoomCode(): string {
@@ -326,7 +326,7 @@ export function HomePage() {
 
   if (visibleSnapshot) {
     if (visibleSnapshot.room.gameMode === "truco-gaucho") {
-      return <><TrucoBoard snapshot={visibleSnapshot} currentPlayerId={currentPlayerId} isBusy={isBusy} onLeave={handleLeave} onPlayCard={(cardId) => currentPlayerId ? handleSnapshotUpdate((current) => playTrucoCard(current, currentPlayerId, cardId)) : undefined} onCall={(call: Exclude<TrucoCall, "none">) => currentPlayerId ? handleSnapshotUpdate((current) => callTruco(current, currentPlayerId, call)) : undefined} onAnswer={(accept) => currentPlayerId ? handleSnapshotUpdate((current) => answerTrucoCall(current, currentPlayerId, accept)) : undefined} onNextHand={() => handleSnapshotUpdate(nextTrucoHand)} />{error ? <ErrorToast message={error} /> : null}</>;
+      return <><TrucoBoard snapshot={visibleSnapshot} currentPlayerId={currentPlayerId} isBusy={isBusy} onLeave={handleLeave} onPlayCard={(cardId) => currentPlayerId ? handleSnapshotUpdate((current) => playTrucoCard(current, currentPlayerId, cardId)) : undefined} onCall={(call: Exclude<TrucoCall, "none">) => currentPlayerId ? handleSnapshotUpdate((current) => callTruco(current, currentPlayerId, call)) : undefined} onAnswer={(accept) => currentPlayerId ? handleSnapshotUpdate((current) => answerTrucoCall(current, currentPlayerId, accept)) : undefined} onRaiseRealEnvido={() => currentPlayerId ? handleSnapshotUpdate((current) => raiseRealEnvido(current, currentPlayerId)) : undefined} onNextHand={() => handleSnapshotUpdate(nextTrucoHand)} />{error ? <ErrorToast message={error} /> : null}</>;
     }
     return (
       <>

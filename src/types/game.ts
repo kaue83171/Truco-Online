@@ -24,7 +24,7 @@ export type StartingLives = 3 | 5;
 export type GameMode = "fodinha" | "truco-gaucho";
 export type TrucoTeam = "A" | "B";
 export type TrucoTargetPoints = 1 | 15 | 30;
-export type TrucoCall = "none" | "envido" | "flor" | "truco" | "retruco" | "vale-quatro";
+export type TrucoCall = "none" | "envido" | "real-envido" | "flor" | "truco" | "retruco" | "vale-quatro";
 export type TrucoPhase = "waiting" | "dealing" | "playing" | "call" | "hand-result" | "match-result";
 
 export type Card = {
@@ -169,6 +169,7 @@ export type TrucoPendingCall = {
   byPlayerId: string;
   points: number;
   answeredByPlayerId?: string | null;
+  originalCallerId?: string;
 };
 
 export type TrucoGameState = {

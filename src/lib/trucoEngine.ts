@@ -65,12 +65,36 @@ function winningTeamForHand(
 }
 
 function pointsForCall(call: TrucoCall): number {
+  if (call === "real-envido") return 5;
   if (call === "vale-quatro") return 4;
   if (call === "retruco") return 3;
   if (call === "truco") return 2;
   if (call === "flor") return 3;
   if (call === "envido") return 2;
   return 1;
+}
+
+function cardEnvidoValue(card: Card): number {
+  if (card.value === "A") return 1;
+  if (card.value === "10" || card.value === "11" || card.value === "12") return 0;
+  return Number(card.value);
+}
+
+function playerEnvido(hand: Card[]): number {
+  const bySuit = new Map<string, number[]>();
+  for (const card of hand) bySuit.set(card.suit, [...(bySuit.get(card.suit) ?? []), cardEnvidoValue(card)]);
+  const pairedValues = [...bySuit.values()].filter((values) => values.length >= 2).map((values) => 20 + values.sort((a, b) => b - a)[0] + values.sort((a, b) => b - a)[1]);
+  return pairedValues.length ? Math.max(...pairedValues) : Math.max(0, ...hand.map(cardEnvidoValue));
+}
+
+function winningEnvidoTeam(snapshot: GameSnapshot, callerTeam: TrucoTeam): TrucoTeam {
+  const truco = snapshot.gameState.truco;
+  if (!truco) return callerTeam;
+  const players = activePlayers(snapshot);
+  const scores: Record<TrucoTeam, number> = { A: 0, B: 0 };
+  for (const player of players) scores[teamFor(snapshot, player.id)] = Math.max(scores[teamFor(snapshot, player.id)], playerEnvido(player.hand));
+  if (scores.A === scores.B) return callerTeam;
+  return scores.A > scores.B ? "A" : "B";
 }
 
 function addPoints(snapshot: GameSnapshot, team: TrucoTeam, points: number): void {
@@ -154,6 +178,7 @@ export function startTrucoGame(snapshot: GameSnapshot): GameSnapshot {
   };
   truco.targetPoints = truco.targetPoints ?? 30;
   const randomizedSeats = [...players].sort(() => Math.random() - 0.5);
+  draft.room.tableOrder = randomizedSeats.map((player) => player.id);
   truco.playerTeams = Object.fromEntries(randomizedSeats.map((player, index) => [player.id, index % 2 === 0 ? "A" : "B"]));
   draft.gameState.truco = truco;
   draft.room.status = "playing";
@@ -241,12 +266,27 @@ export function callTruco(snapshot: GameSnapshot, playerId: string, type: Exclud
     const hand = draft.players.find((player) => player.id === playerId)?.hand ?? [];
     if (hand.length !== 3 || new Set(hand.map((card) => card.suit)).size !== 1) throw new Error("Você só pode cantar flor com três cartas do mesmo naipe.");
   }
-  const pending: TrucoPendingCall = { type, byPlayerId: playerId, points: pointsForCall(type), answeredByPlayerId: null };
+  const pending: TrucoPendingCall = { type, byPlayerId: playerId, originalCallerId: playerId, points: pointsForCall(type), answeredByPlayerId: null };
   truco.pendingCall = pending;
   truco.phase = "call";
   truco.currentTurnPlayerId = nextPlayer(draft, playerId);
   draft.room.currentTurnPlayerId = truco.currentTurnPlayerId;
   truco.lastAction = `${draft.players.find((player) => player.id === playerId)?.name ?? "Jogador"} cantou ${type}`;
+  draft.room.updatedAt = now();
+  return draft;
+}
+
+export function raiseRealEnvido(snapshot: GameSnapshot, playerId: string): GameSnapshot {
+  const draft = clone(snapshot);
+  const truco = draft.gameState.truco;
+  const pending = truco?.pendingCall;
+  if (!truco || truco.phase !== "call" || pending?.type !== "envido" || teamFor(draft, playerId) === teamFor(draft, pending.byPlayerId)) {
+    throw new Error("Só a equipe adversária pode aumentar Envido para Real Envido.");
+  }
+  truco.pendingCall = { type: "real-envido", byPlayerId: playerId, originalCallerId: pending.byPlayerId, points: 5, answeredByPlayerId: null };
+  truco.currentTurnPlayerId = nextPlayer(draft, playerId);
+  draft.room.currentTurnPlayerId = truco.currentTurnPlayerId;
+  truco.lastAction = `${draft.players.find((player) => player.id === playerId)?.name ?? "Jogador"} aumentou para Real Envido`;
   draft.room.updatedAt = now();
   return draft;
 }
@@ -258,15 +298,39 @@ export function answerTrucoCall(snapshot: GameSnapshot, playerId: string, accept
   if (!truco || truco.phase !== "call" || !pending || teamFor(draft, playerId) === teamFor(draft, pending.byPlayerId)) throw new Error("A equipe adversária deve responder ao canto.");
   if (!accept) {
     const winner = teamFor(draft, pending.byPlayerId);
-    addPoints(draft, winner, Math.max(1, pending.points - 1));
+    addPoints(draft, winner, pending.type === "real-envido" ? 2 : pending.type === "envido" ? 1 : Math.max(1, pending.points - 1));
+    if (pending.type === "envido" || pending.type === "real-envido" || pending.type === "flor") {
+      truco.pendingCall = null;
+      const matchEnded = truco.teamPoints.A >= truco.targetPoints || truco.teamPoints.B >= truco.targetPoints;
+      truco.phase = matchEnded ? "match-result" : "playing";
+      const callerId = pending.originalCallerId ?? pending.byPlayerId;
+      truco.currentTurnPlayerId = matchEnded ? null : callerId;
+      draft.room.currentTurnPlayerId = truco.currentTurnPlayerId;
+      truco.lastAction = `Equipe ${winner} ganhou pontos porque o canto foi recusado`;
+      draft.room.updatedAt = now();
+      return draft;
+    }
     truco.handWinnerTeam = winner;
     truco.handMessage = `Equipe ${winner} ganhou por recusa.`;
     truco.phase = truco.teamPoints.A >= truco.targetPoints || truco.teamPoints.B >= truco.targetPoints ? "match-result" : "hand-result";
   } else {
+    if (pending.type === "envido" || pending.type === "real-envido") {
+      const originalCallerId = pending.originalCallerId ?? pending.byPlayerId;
+      const winner = winningEnvidoTeam(draft, teamFor(draft, originalCallerId));
+      addPoints(draft, winner, pending.type === "real-envido" ? 5 : 2);
+      truco.pendingCall = null;
+      const matchEnded = truco.teamPoints.A >= truco.targetPoints || truco.teamPoints.B >= truco.targetPoints;
+      truco.phase = matchEnded ? "match-result" : "playing";
+      truco.currentTurnPlayerId = matchEnded ? null : originalCallerId;
+      draft.room.currentTurnPlayerId = truco.currentTurnPlayerId;
+      truco.lastAction = `Equipe ${winner} ganhou o ${pending.type === "real-envido" ? "Real Envido" : "Envido"}`;
+      draft.room.updatedAt = now();
+      return draft;
+    }
     truco.acceptedCall = pending.type;
     truco.pendingCall = null;
     truco.phase = "playing";
-    truco.currentTurnPlayerId = nextPlayer(draft, pending.byPlayerId);
+    truco.currentTurnPlayerId = pending.originalCallerId ?? pending.byPlayerId;
     draft.room.currentTurnPlayerId = truco.currentTurnPlayerId;
     truco.lastAction = `${draft.players.find((entry) => entry.id === playerId)?.name ?? "Jogador"} aceitou o canto`;
   }
