@@ -306,13 +306,19 @@ export function answerTrucoCall(snapshot: GameSnapshot, playerId: string, accept
       const callerId = pending.originalCallerId ?? pending.byPlayerId;
       truco.currentTurnPlayerId = matchEnded ? null : callerId;
       draft.room.currentTurnPlayerId = truco.currentTurnPlayerId;
-      truco.lastAction = `Equipe ${winner} ganhou pontos porque o canto foi recusado`;
+      const awarded = pending.type === "real-envido" ? 2 : 1;
+      truco.lastAction = `${pending.type === "real-envido" ? "Real Envido" : "Envido"} recusado: Equipe ${winner} marcou ${awarded} ponto${awarded === 1 ? "" : "s"}. A mão continua.`;
       draft.room.updatedAt = now();
       return draft;
     }
     truco.handWinnerTeam = winner;
-    truco.handMessage = `Equipe ${winner} ganhou por recusa.`;
+    const awarded = Math.max(1, pending.points - 1);
+    truco.handMessage = `Canto recusado. Equipe ${winner} marca ${awarded} ponto${awarded === 1 ? "" : "s"} e vence a mão.`;
     truco.phase = truco.teamPoints.A >= truco.targetPoints || truco.teamPoints.B >= truco.targetPoints ? "match-result" : "hand-result";
+    truco.pendingCall = null;
+    truco.currentTurnPlayerId = null;
+    draft.room.currentTurnPlayerId = null;
+    truco.lastAction = `Canto recusado: Equipe ${winner} marcou ${awarded} ponto${awarded === 1 ? "" : "s"}; mão encerrada.`;
   } else {
     if (pending.type === "envido" || pending.type === "real-envido") {
       const originalCallerId = pending.originalCallerId ?? pending.byPlayerId;
