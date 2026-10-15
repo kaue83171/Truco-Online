@@ -221,6 +221,9 @@ export function callTruco(snapshot: GameSnapshot, playerId: string, type: Exclud
   const draft = clone(snapshot);
   const truco = draft.gameState.truco;
   if (!truco || truco.phase !== "playing" || truco.currentTurnPlayerId !== playerId) throw new Error("Você só pode cantar na sua vez.");
+  if ((type === "envido" || type === "flor") && (truco.trickNumber !== 1 || truco.tableCards.length > 0 || (truco.completedTricks?.length ?? 0) > 0)) {
+    throw new Error("Envido e flor só podem ser pedidos antes da primeira carta da mão.");
+  }
   if (type === "flor") {
     const hand = draft.players.find((player) => player.id === playerId)?.hand ?? [];
     if (hand.length !== 3 || new Set(hand.map((card) => card.suit)).size !== 1) throw new Error("Você só pode cantar flor com três cartas do mesmo naipe.");
