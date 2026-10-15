@@ -18,6 +18,7 @@ export function TrucoBoard({ snapshot, currentPlayerId, isBusy, onLeave, onPlayC
   const current = snapshot.players.find((player) => player.id === currentPlayerId);
   const pending = truco?.pendingCall;
   if (!truco || !current) return null;
+  const completedTricks = truco.completedTricks ?? [];
   const isMyTurn = truco.currentTurnPlayerId === currentPlayerId;
   const teamOf = (id: string) => truco.playerTeams[id] ?? "A";
   const tableCards = truco.tableCards;
@@ -49,11 +50,14 @@ export function TrucoBoard({ snapshot, currentPlayerId, isBusy, onLeave, onPlayC
             <div className="mx-auto flex min-h-36 items-center justify-center gap-1 rounded-2xl border border-white/10 bg-black/10 px-4 py-5">
               {tableCards.length ? tableCards.map((entry) => <PlayingCard key={entry.id} card={entry.card} compact />) : <p className="text-sm text-white/40">Jogue uma carta no centro da mesa</p>}
             </div>
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
               {snapshot.players.filter((player) => !player.isSpectator).map((player) => (
-                <div key={player.id} className={`rounded-xl border p-2 text-xs ${truco.currentTurnPlayerId === player.id ? "border-amber-200/60 bg-amber-100/10" : "border-white/10 bg-black/15"}`}>
-                  <div className="flex items-center justify-between gap-2 text-white"><span className="truncate">{player.name}{player.isBot ? " · bot" : ""}</span><span className="text-amber-200">{teamOf(player.id)}</span></div>
-                  <span className="text-white/45">{player.id === currentPlayerId ? "você" : truco.tricksWon[player.id] ?? 0} vazas</span>
+                <div key={player.id} className={`rounded-xl border p-2 text-xs ${truco.lastTrickWinnerId === player.id ? "border-emerald-200/70 bg-emerald-100/15 shadow-[0_0_1.2rem_rgba(167,243,208,0.2)]" : truco.currentTurnPlayerId === player.id ? "border-amber-200/60 bg-amber-100/10" : "border-white/10 bg-black/15"}`}>
+                  <div className="flex items-center justify-between gap-2 text-white"><span className="truncate">{player.name}{player.isBot ? " · bot" : ""}</span><span className="text-amber-200">equipe {teamOf(player.id)}</span></div>
+                  <div className="mt-2 flex items-center gap-1 overflow-x-auto">
+                    {[...completedTricks.flat().filter((entry) => entry.playerId === player.id), ...truco.tableCards.filter((entry) => entry.playerId === player.id), ...player.hand.map((card) => ({ id: `${player.id}-${card.id}`, card, playerId: player.id }))].map((entry) => <PlayingCard key={entry.id} card={entry.card} compact disabled />)}
+                  </div>
+                  <span className="mt-1 block text-white/45">{player.id === currentPlayerId ? "você" : `${truco.tricksWon[player.id] ?? 0} vazas`}{truco.lastTrickWinnerId === player.id ? " · ganhou a última" : ""}</span>
                 </div>
               ))}
             </div>

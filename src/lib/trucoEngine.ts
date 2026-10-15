@@ -40,6 +40,29 @@ function handWinner(tableCards: TableCard[]): string | null {
   return winners.length === 1 ? winners[0].playerId : null;
 }
 
+function tableCardStarter(cards: TableCard[]): string | null {
+  return cards[0]?.playerId ?? null;
+}
+
+function winningTeamForHand(
+  truco: NonNullable<GameSnapshot["gameState"]["truco"]>,
+  teamTricks: number,
+  otherTricks: number,
+  currentTeam: TrucoTeam | null,
+  otherTeam: TrucoTeam
+): TrucoTeam | null {
+  if (teamTricks > otherTricks && currentTeam) return currentTeam;
+  if (otherTricks > teamTricks) return otherTeam;
+  const winners = truco.trickWinners ?? [];
+  const first = winners[0];
+  const second = winners[1];
+  const third = winners[2];
+  if (first && second && !third) return first;
+  if (!first && second) return second;
+  if (first && !second) return first;
+  return third ?? currentTeam ?? otherTeam;
+}
+
 function pointsForCall(call: TrucoCall): number {
   if (call === "vale-quatro") return 4;
   if (call === "retruco") return 3;
@@ -82,7 +105,10 @@ function dealTrucoHand(snapshot: GameSnapshot, dealerId: string | null): GameSna
   truco.handNumber += 1;
   truco.trickNumber = 1;
   truco.tricksWon = Object.fromEntries(players.map((player) => [player.id, 0]));
+  truco.trickWinners = [];
   truco.tableCards = [];
+  truco.completedTricks = [];
+  truco.lastTrickWinnerId = null;
   truco.deck = deck;
   truco.pendingCall = null;
   truco.acceptedCall = "none";
@@ -112,7 +138,10 @@ export function startTrucoGame(snapshot: GameSnapshot): GameSnapshot {
     handNumber: 0,
     trickNumber: 0,
     tricksWon: {},
+    trickWinners: [],
     tableCards: [],
+    completedTricks: [],
+    lastTrickWinnerId: null,
     deck: [],
     pendingCall: null,
     acceptedCall: "none",
@@ -154,22 +183,26 @@ export function playTrucoCard(snapshot: GameSnapshot, playerId: string, cardId: 
     return draft;
   }
   const winnerId = handWinner(truco.tableCards);
+  truco.completedTricks.push([...truco.tableCards]);
+  truco.lastTrickWinnerId = winnerId;
   if (winnerId) truco.tricksWon[winnerId] = (truco.tricksWon[winnerId] ?? 0) + 1;
   const winningTeam = winnerId ? teamFor(draft, winnerId) : null;
+  truco.trickWinners.push(winningTeam);
   const teamTricks = winningTeam ? players.filter((entry) => teamFor(draft, entry.id) === winningTeam).reduce((sum, entry) => sum + (truco.tricksWon[entry.id] ?? 0), 0) : 0;
   const otherTeam: TrucoTeam = winningTeam === "A" ? "B" : "A";
   const otherTricks = players.filter((entry) => teamFor(draft, entry.id) === otherTeam).reduce((sum, entry) => sum + (truco.tricksWon[entry.id] ?? 0), 0);
   const handOver = teamTricks >= 2 || otherTricks >= 2 || truco.trickNumber >= 3;
-  if (!handOver && winnerId) {
+  if (!handOver && truco.trickNumber < 3) {
     truco.trickNumber += 1;
     truco.tableCards = [];
-    truco.currentTurnPlayerId = winnerId;
-    draft.room.currentTurnPlayerId = winnerId;
-    truco.lastAction = `${draft.players.find((entry) => entry.id === winnerId)?.name ?? "Jogador"} ganhou a vaza`;
+    const nextStarter = winnerId ?? tableCardStarter(truco.completedTricks[truco.completedTricks.length - 1]);
+    truco.currentTurnPlayerId = nextStarter;
+    draft.room.currentTurnPlayerId = nextStarter;
+    truco.lastAction = winnerId ? `${draft.players.find((entry) => entry.id === winnerId)?.name ?? "Jogador"} ganhou a vaza` : "Vaza empatada; a mão continua";
     draft.room.updatedAt = now();
     return draft;
   }
-  const handWinnerTeam = teamTricks >= otherTricks ? winningTeam : otherTeam;
+  const handWinnerTeam = winningTeamForHand(truco, teamTricks, otherTricks, winningTeam, otherTeam);
   if (handWinnerTeam) {
     const points = pointsForCall(truco.acceptedCall);
     addPoints(draft, handWinnerTeam, points);

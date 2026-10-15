@@ -13,6 +13,10 @@ function shouldHideHand(
     return false;
   }
 
+  if (snapshot.room.gameMode === "truco-gaucho") {
+    return false;
+  }
+
   if (!viewer || viewer.isSpectator || !viewer.isAlive) {
     return true;
   }

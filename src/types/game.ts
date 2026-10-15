@@ -181,6 +181,9 @@ export type TrucoGameState = {
   handNumber: number;
   trickNumber: number;
   tricksWon: Record<string, number>;
+  completedTricks: TableCard[][];
+  lastTrickWinnerId: string | null;
+  trickWinners: Array<TrucoTeam | null>;
   tableCards: TableCard[];
   deck: Card[];
   pendingCall: TrucoPendingCall | null;

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowDownRight, HelpCircle, LogIn, Plus, Sparkles, WifiOff, Swords } from "lucide-react";
 import { FinalResult } from "../components/FinalResult";
 import { GameBoard } from "../components/GameBoard";
@@ -54,6 +54,7 @@ export function HomePage() {
   const [error, setError] = useState<string | null>(null);
   const [isBusy, setIsBusy] = useState(false);
   const [tutorialOpen, setTutorialOpen] = useState(false);
+  const botActionPending = useRef(false);
 
   const visibleSnapshot = useMemo(
     () => (snapshot ? getVisibleGameStateForPlayer(snapshot, currentPlayerId) : null),
@@ -196,16 +197,17 @@ export function HomePage() {
   }, [currentPlayerId, snapshot]);
 
   useEffect(() => {
-    if (!snapshot || snapshot.room.gameMode !== "truco-gaucho" || snapshot.room.hostId !== currentPlayerId) return undefined;
+    if (!snapshot || snapshot.room.gameMode !== "truco-gaucho" || snapshot.room.hostId !== currentPlayerId || isBusy || botActionPending.current) return undefined;
     const truco = snapshot.gameState.truco;
     const bot = snapshot.players.find((player) => player.id === truco?.currentTurnPlayerId && player.isBot);
     if (!bot || !truco || truco.phase === "hand-result" || truco.phase === "match-result") return undefined;
     const timeout = window.setTimeout(() => {
+      botActionPending.current = true;
       setIsBusy(true);
-      updateRoom(snapshot.room.id, playBotTurn).then(setSnapshot).catch(() => undefined).finally(() => setIsBusy(false));
+      updateRoom(snapshot.room.id, playBotTurn).then(setSnapshot).catch(() => undefined).finally(() => { botActionPending.current = false; setIsBusy(false); });
     }, 900);
     return () => window.clearTimeout(timeout);
-  }, [currentPlayerId, snapshot]);
+  }, [currentPlayerId, isBusy, snapshot]);
 
   async function runAction(action: () => Promise<GameSnapshot | null | void>) {
     setError(null);
