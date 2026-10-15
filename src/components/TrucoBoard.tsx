@@ -51,15 +51,15 @@ export function TrucoBoard({ snapshot, currentPlayerId, isBusy, onLeave, onPlayC
       <section className="mx-auto mt-5 grid max-w-6xl gap-4 lg:grid-cols-[1fr_18rem]">
         <div className="table-board min-h-[34rem] rounded-[2rem] p-4 sm:p-7">
           <div className="flex min-h-[32rem] flex-col gap-3 sm:flex-row">
-            <aside className="max-h-40 shrink-0 overflow-y-auto rounded-xl border border-white/10 bg-black/20 p-2 sm:max-h-[32rem] sm:w-28" aria-label="Histórico das cartas desta mão">
+            <aside className="max-h-40 shrink-0 overflow-y-auto rounded-xl border border-white/10 bg-black/20 p-2 sm:max-h-[32rem] sm:w-36" aria-label="Histórico das cartas desta mão">
               <p className="sticky top-0 z-10 mb-2 rounded bg-[#173c2d] py-1 text-center text-[10px] font-semibold uppercase tracking-wide text-amber-100">Cartas desta mão</p>
               <div className="space-y-1.5">
                 {playedThisHand.length ? playedThisHand.map((entry, index) => {
                   const playerName = snapshot.players.find((player) => player.id === entry.playerId)?.name ?? "Jogador";
                   const isWinner = entry.trickNumber === (tableCards.length === orderedPlayers.length ? truco.trickNumber : completedTricks[lastCompletedTrickIndex]?.[0]?.trickNumber) && entry.playerId === truco.lastTrickWinnerId && (tableCards.length === 0 || tableCards.length === orderedPlayers.length);
-                  return <div key={entry.id} className={`flex items-center gap-1 rounded-md p-1 ${isWinner ? "bg-emerald-200/15 ring-1 ring-emerald-200/60" : "bg-white/[0.04]"}`} title={`${index + 1}. ${playerName}: ${entry.card.label}`}>
+                  return <div key={entry.id} className={`flex items-center gap-2 rounded-md p-1 sm:flex-col sm:gap-1 ${isWinner ? "bg-emerald-200/15 ring-1 ring-emerald-200/60" : "bg-white/[0.04]"}`} title={`${index + 1}. ${playerName}: ${entry.card.label}`}>
                     <PlayingCard card={entry.card} compact disabled />
-                    <span className="min-w-0 truncate text-[9px] text-white/65">{playerName}</span>
+                    <span className="min-w-0 truncate text-[9px] text-white/65">{playerName} · {entry.card.label}</span>
                   </div>;
                 }) : <p className="py-2 text-center text-[10px] text-white/40">Ainda sem jogadas</p>}
               </div>
