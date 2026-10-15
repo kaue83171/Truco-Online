@@ -2,7 +2,7 @@ import { Clock, Copy, LogOut, Play, Share2, Users } from "lucide-react";
 import { GameEvents } from "./GameEvents";
 import { PlayerList } from "./PlayerList";
 import { getBidTimeLimitSeconds, getStartingLives } from "../lib/gameEngine";
-import type { StartingLives, VisibleGameSnapshot } from "../types/game";
+import type { StartingLives, TrucoTargetPoints, VisibleGameSnapshot } from "../types/game";
 
 const BID_TIME_OPTIONS = [10, 15, 20, 30, 45, 60, 90, 120];
 
@@ -16,6 +16,7 @@ type LobbyProps = {
   onLeave: () => void;
   isBusy?: boolean;
   onAddBot?: () => void;
+  onSetTrucoTargetPoints?: (target: TrucoTargetPoints) => void;
 };
 
 export function Lobby({
@@ -28,6 +29,7 @@ export function Lobby({
   onLeave,
   isBusy = false,
   onAddBot,
+  onSetTrucoTargetPoints,
 }: LobbyProps) {
   const seatedPlayers = snapshot.players.filter((player) => !player.isSpectator);
   const currentPlayer = snapshot.players.find((player) => player.id === currentPlayerId);
@@ -153,6 +155,15 @@ export function Lobby({
             <span className="mt-1 block text-xs text-white/45">
               O anfitrião escolhe antes de iniciar a partida.
             </span>
+          </label> : null}
+          {isTruco && onSetTrucoTargetPoints ? <label className="mt-5 block">
+            <span className="mb-2 block text-sm font-medium text-white/75">Meta da partida</span>
+            <select value={snapshot.gameState.truco?.targetPoints ?? 30} disabled={!isHost || isBusy} onChange={(event) => onSetTrucoTargetPoints(Number(event.target.value) as TrucoTargetPoints)} className="w-full rounded-md border border-white/15 bg-white px-3 py-3 text-mesa-950 disabled:cursor-not-allowed disabled:opacity-60">
+              <option value={1}>1 ponto (partida rápida)</option>
+              <option value={15}>15 pontos</option>
+              <option value={30}>30 pontos</option>
+            </select>
+            <span className="mt-1 block text-xs text-white/45">As equipes permanecem iguais até essa meta.</span>
           </label> : null}
           {!isTruco ? <label className="mt-5 block">
             <span className="mb-2 inline-flex items-center gap-2 text-sm font-medium text-white/75">

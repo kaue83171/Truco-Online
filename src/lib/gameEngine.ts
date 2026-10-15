@@ -174,6 +174,7 @@ function createEmptyGameState(roomId: string, gameMode: GameMode = "fodinha"): G
 export function createEmptyTrucoState(): TrucoGameState {
   return {
     phase: "waiting",
+    targetPoints: 30,
     teamPoints: { A: 0, B: 0 },
     teamMatchsticks: { A: 0, B: 0 },
     teamHandsWon: { A: 0, B: 0 },

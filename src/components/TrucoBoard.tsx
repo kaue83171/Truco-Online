@@ -19,6 +19,7 @@ export function TrucoBoard({ snapshot, currentPlayerId, isBusy, onLeave, onPlayC
   const pending = truco?.pendingCall;
   if (!truco || !current) return null;
   const completedTricks = truco.completedTricks ?? [];
+  const targetPoints = truco.targetPoints ?? 30;
   const isMyTurn = truco.currentTurnPlayerId === currentPlayerId;
   const teamOf = (id: string) => truco.playerTeams[id] ?? "A";
   const tableCards = truco.tableCards;
@@ -64,7 +65,7 @@ export function TrucoBoard({ snapshot, currentPlayerId, isBusy, onLeave, onPlayC
           </div>
         </div>
         <aside className="felt-panel rounded-2xl p-4 sm:p-5">
-          <div className="flex items-center gap-2 text-sm text-white/70"><Trophy size={17} className="text-amber-200" /> placar até 12</div>
+          <div className="flex items-center gap-2 text-sm text-white/70"><Trophy size={17} className="text-amber-200" /> placar até {targetPoints}</div>
           <div className="mt-4 grid grid-cols-2 gap-2 text-center"><div className="rounded-xl bg-white/[0.06] p-3"><p className="text-xs text-white/45">Equipe A</p><p className="text-3xl font-bold text-amber-200">{truco.teamPoints.A}</p></div><div className="rounded-xl bg-white/[0.06] p-3"><p className="text-xs text-white/45">Equipe B</p><p className="text-3xl font-bold text-amber-200">{truco.teamPoints.B}</p></div></div>
           <div className="mt-5 rounded-xl border border-white/10 bg-black/10 p-3 text-sm text-white/65"><Shield size={16} className="mb-2 text-amber-200" />{truco.lastAction ?? "Aguardando ação"}</div>
           {pending ? <div className="mt-4 rounded-xl border border-amber-200/30 bg-amber-200/10 p-3"><p className="text-sm font-semibold text-amber-100">{pending.type} — vale {pending.points}</p><div className="mt-3 grid grid-cols-2 gap-2"><button type="button" disabled={isBusy} onClick={() => onAnswer(true)} className="rounded-lg bg-amber-200 px-2 py-2 text-sm font-bold text-mesa-950">aceitar</button><button type="button" disabled={isBusy} onClick={() => onAnswer(false)} className="rounded-lg border border-white/20 px-2 py-2 text-sm text-white">correr</button></div></div> : null}

@@ -7,6 +7,7 @@ import type {
   TrucoCall,
   TrucoPendingCall,
   TrucoTeam,
+  TrucoTargetPoints,
 } from "../types/game";
 
 function clone(snapshot: GameSnapshot): GameSnapshot {
@@ -75,7 +76,8 @@ function pointsForCall(call: TrucoCall): number {
 function addPoints(snapshot: GameSnapshot, team: TrucoTeam, points: number): void {
   const truco = snapshot.gameState.truco;
   if (!truco) return;
-  truco.teamPoints[team] = Math.min(12, truco.teamPoints[team] + points);
+  const target = truco.targetPoints ?? 30;
+  truco.teamPoints[team] = Math.min(target, truco.teamPoints[team] + points);
   truco.teamMatchsticks[team] = truco.teamPoints[team];
 }
 
@@ -129,6 +131,7 @@ export function startTrucoGame(snapshot: GameSnapshot): GameSnapshot {
   const draft = clone(snapshot);
   const truco = draft.gameState.truco ?? {
     phase: "waiting",
+    targetPoints: 30 as TrucoTargetPoints,
     teamPoints: { A: 0, B: 0 },
     teamMatchsticks: { A: 0, B: 0 },
     teamHandsWon: { A: 0, B: 0 },
@@ -149,7 +152,9 @@ export function startTrucoGame(snapshot: GameSnapshot): GameSnapshot {
     handMessage: null,
     lastAction: null,
   };
-  truco.playerTeams = Object.fromEntries(players.map((player, index) => [player.id, index % 2 === 0 ? "A" : "B"]));
+  truco.targetPoints = truco.targetPoints ?? 30;
+  const randomizedSeats = [...players].sort(() => Math.random() - 0.5);
+  truco.playerTeams = Object.fromEntries(randomizedSeats.map((player, index) => [player.id, index % 2 === 0 ? "A" : "B"]));
   draft.gameState.truco = truco;
   draft.room.status = "playing";
   return dealTrucoHand(draft, null);
@@ -158,8 +163,16 @@ export function startTrucoGame(snapshot: GameSnapshot): GameSnapshot {
 export function nextTrucoHand(snapshot: GameSnapshot): GameSnapshot {
   const truco = snapshot.gameState.truco;
   if (!truco) return snapshot;
-  if (truco.teamPoints.A >= 12 || truco.teamPoints.B >= 12) return snapshot;
+  if (truco.teamPoints.A >= truco.targetPoints || truco.teamPoints.B >= truco.targetPoints) return snapshot;
   return dealTrucoHand(snapshot, truco.currentDealerId);
+}
+
+export function setTrucoTargetPoints(snapshot: GameSnapshot, targetPoints: TrucoTargetPoints): GameSnapshot {
+  const draft = clone(snapshot);
+  if (draft.room.status !== "lobby" || !draft.gameState.truco) return draft;
+  draft.gameState.truco.targetPoints = targetPoints;
+  draft.room.updatedAt = now();
+  return draft;
 }
 
 export function playTrucoCard(snapshot: GameSnapshot, playerId: string, cardId: string): GameSnapshot {
@@ -210,7 +223,7 @@ export function playTrucoCard(snapshot: GameSnapshot, playerId: string, cardId: 
   }
   truco.handWinnerTeam = handWinnerTeam;
   truco.handMessage = handWinnerTeam ? `Equipe ${handWinnerTeam} ganhou a mão e marcou ${pointsForCall(truco.acceptedCall)} ponto(s).` : "Mão empatada.";
-  truco.phase = truco.teamPoints.A >= 12 || truco.teamPoints.B >= 12 ? "match-result" : "hand-result";
+  truco.phase = truco.teamPoints.A >= truco.targetPoints || truco.teamPoints.B >= truco.targetPoints ? "match-result" : "hand-result";
   truco.currentTurnPlayerId = null;
   draft.room.currentTurnPlayerId = null;
   draft.room.updatedAt = now();
@@ -248,7 +261,7 @@ export function answerTrucoCall(snapshot: GameSnapshot, playerId: string, accept
     addPoints(draft, winner, Math.max(1, pending.points - 1));
     truco.handWinnerTeam = winner;
     truco.handMessage = `Equipe ${winner} ganhou por recusa.`;
-    truco.phase = truco.teamPoints.A >= 12 || truco.teamPoints.B >= 12 ? "match-result" : "hand-result";
+    truco.phase = truco.teamPoints.A >= truco.targetPoints || truco.teamPoints.B >= truco.targetPoints ? "match-result" : "hand-result";
   } else {
     truco.acceptedCall = pending.type;
     truco.pendingCall = null;

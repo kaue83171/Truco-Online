@@ -31,7 +31,7 @@ import {
 import { subscribeToPresence, subscribeToRoomState } from "../lib/realtimeService";
 import { getVisibleGameStateForPlayer } from "../lib/visibleState";
 import type { GameSnapshot } from "../types/game";
-import { addTrucoBot, answerTrucoCall, callTruco, nextTrucoHand, playBotTurn, playTrucoCard, startTrucoGame } from "../lib/trucoEngine";
+import { addTrucoBot, answerTrucoCall, callTruco, nextTrucoHand, playBotTurn, playTrucoCard, setTrucoTargetPoints, startTrucoGame } from "../lib/trucoEngine";
 import type { GameMode, TrucoCall } from "../types/game";
 
 function getInitialRoomCode(): string {
@@ -302,6 +302,7 @@ export function HomePage() {
           }
           onKickPlayer={handleKickPlayer}
           onAddBot={visibleSnapshot.room.gameMode === "truco-gaucho" ? () => handleSnapshotUpdate((current) => addTrucoBot(current, `Bot ${current.players.filter((player) => player.isBot).length + 1}`)) : undefined}
+          onSetTrucoTargetPoints={visibleSnapshot.room.gameMode === "truco-gaucho" ? (target) => handleSnapshotUpdate((current) => setTrucoTargetPoints(current, target)) : undefined}
         />
         {error ? <ErrorToast message={error} /> : null}
       </>
